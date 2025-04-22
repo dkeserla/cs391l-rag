@@ -24,7 +24,9 @@ def build_retriever(
 
     if os.path.exists(os.path.join(persist_dir, "chroma.sqlite3")):
         if rebuild:
-            print("[build_retriever] Removing existing db and rebuilding")
+            import shutil
+            print(f"[build_retriever] Deleting existing vectorstore at '{persist_dir}'")
+            shutil.rmtree(persist_dir)
         else:
             print("[build_retriever] Loading existing Chroma index...")
             return Chroma(persist_directory=persist_dir, embedding_function=embedder).as_retriever()
@@ -52,6 +54,8 @@ def build_retriever(
                 page.metadata["source"] = filename
                 docs.append(page)
                 doc_content_types.append(file_content_types.get(filename, "transcript"))
+
+        print(f"[load] {filename} → content type: {file_content_types.get(filename, 'transcript')}")
     
     print(f"[build_retriever] Loading {len(webpage_urls)} webpages...")
     for url, webpage_content_type in zip(webpage_urls, webpage_content_types):
