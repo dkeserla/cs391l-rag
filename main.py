@@ -31,12 +31,9 @@ def main():
 
     args = parser.parse_args()
 
-
-
-
-    query = "What percentage of the grade is homework"
-    model_name = "gpt-4o"  # "gpt-4o", "gemini", or "claude-3.7"
-    embed_model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    query = args.query or "What percentage of the grade is homework"
+    model_name = args.model or "gpt-4o"  # "gpt-4o", "gemini", or "claude-3.7"
+    embed_model_name = args.embed or "sentence-transformers/all-MiniLM-L6-v2"
 
     # 1. Build retriever
     retriever = timed_section("1/4: Build Retriever", build_retriever, "data/", model_name=embed_model_name, file_content_types={"hw1.pdf": "homework 1", "hw2.pdf": "homework 2", "hw3.pdf": "homework 3","hw4.pdf": "homework 4", "merged_transcript.txt": "lecture transcript"}, rebuild=args.rebuild)
@@ -52,7 +49,8 @@ def main():
     # 4. Generate answer
     answer = timed_section("4/4: Generate Answer", generate_answer, query, context, model_name=model_name)
 
-    print("Final Answer:\n", answer)
+    print(f'Query: {query}')
+    print(f'Answer: {answer}')
 
 
 if __name__ == "__main__":
