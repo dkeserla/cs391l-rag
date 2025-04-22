@@ -1,4 +1,5 @@
 import os
+import shutil
 from .chunking import chunk_document
 from .embeddings import get_embedding_model
 from .metadata import add_metadata_tags
@@ -24,7 +25,6 @@ def build_retriever(
 
     if os.path.exists(os.path.join(persist_dir, "chroma.sqlite3")):
         if rebuild:
-            import shutil
             print(f"[build_retriever] Deleting existing vectorstore at '{persist_dir}'")
             shutil.rmtree(persist_dir)
         else:
