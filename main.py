@@ -39,7 +39,7 @@ def main():
     embed_model_name = "sentence-transformers/all-MiniLM-L6-v2"
 
     # 1. Build retriever
-    retriever = timed_section("1/4: Build Retriever", build_retriever, "data/", model_name=embed_model_name, file_content_types={"hw1.pdf": "homework 1", "merged_transcript.txt": "lecture transcript"}, rebuild=args.rebuild)
+    retriever = timed_section("1/4: Build Retriever", build_retriever, "data/", model_name=embed_model_name, file_content_types={"hw1.pdf": "homework 1", "hw2.pdf": "homework 2", "hw3.pdf": "homework 3","hw4.pdf": "homework 4", "merged_transcript.txt": "lecture transcript"}, rebuild=args.rebuild)
 
     # 2. Retrieve documents
     retrieved_docs = timed_section("2/4: Retrieve Documents", retriever.invoke, query)
