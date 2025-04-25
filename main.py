@@ -8,6 +8,35 @@ from generation.interface import generate_answer
 from augmentation.base import augment_context
 import argparse
 
+from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+from langchain_openai import ChatOpenAI
+
+
+metadata_field_info = [
+    AttributeInfo(
+        name="type",
+        description="The type of content in the document. Can be 'homework', 'lecture transcript','syllabus', 'schedule', or 'class policies'.",
+        type="string",
+    ),
+   AttributeInfo(
+        name="homework_number",
+        description="The homework number for the document. If the document is not a homework assignment, this field will be absent.",
+        type="integer",
+    ),
+]
+
+document_content_description = (
+    "The documents contains information about the course, including lecture transcripts, homework assignments, and class policies. "
+    "For example "
+    "if the query is about homework 2, your filter should be filter=Operation(operator=<Operator.AND: 'and'>, "
+    "arguments=[Comparison(comparator=<Comparator.EQ: 'eq'>, attribute='type', value='homework'), Comparison(comparator=<Comparator.EQ: 'eq'>, "
+    "attribute='homework_number', value=2)] "
+
+    "if the query is related to the syllabus the filter should be filter=Comparison(comparator=<Comparator.EQ: 'eq'>, "
+    "attribute='type', value='syllabus') "
+    )
+
 # Disable tokenizers parallelism warning
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -35,18 +64,36 @@ def main():
     model_name = args.model or "gpt-4o"  # "gpt-4o", "gemini", or "claude-3.7"
     embed_model_name = args.embed or "sentence-transformers/all-MiniLM-L6-v2"
 
+    
+
     # 1. Build retriever
-    retriever = timed_section("1/4: Build Retriever", build_retriever, "data/", model_name=embed_model_name, file_content_types={"hw1.pdf": "homework 1", "hw2.pdf": "homework 2", "hw3.pdf": "homework 3","hw4.pdf": "homework 4", "merged_transcript.txt": "lecture transcript"}, rebuild=args.rebuild)
+    vectorstore = timed_section("1/4: Build Retriever", build_retriever, "data/", model_name=embed_model_name, file_content_types={"hw1.pdf": {"type": "homework", "homework_number": 1} , "hw2.pdf": {"type": "homework", "homework_number": 2}, "hw3.pdf": {"type": "homework", "homework_number": 3}, "hw4.pdf": {"type": "homework", "homework_number": 4}, "merged_transcript.txt": {"type": "lecture transcripts"} }, rebuild=args.rebuild)
+    llm = ChatOpenAI(temperature=0)
+    retriever = SelfQueryRetriever.from_llm(
+        llm,
+        vectorstore,
+        document_content_description,
+        metadata_field_info,
+        search_kwargs={"k":5},
+    )
+    # Suppose your retriever is called "retriever"
+    structured_query = retriever.query_constructor.invoke(query)
+
+    print(structured_query)
+
+
+    # retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
     # 2. Retrieve documents
     retrieved_docs = timed_section("2/4: Retrieve Documents", retriever.invoke, query)
     print(f"Retrieved {len(retrieved_docs)} documents.")
+    print(retrieved_docs)
 
     # 3. Rerank + compress
     embed_model = timed_section("3/4a: Load Embedder", get_embedding_model, embed_model_name)
     context = timed_section("3/4b: Augment Context", augment_context, query, retrieved_docs, embed_model)
-
-    # 4. Generate answer
+    print("context:", context)
+    # # 4. Generate answer
     answer = timed_section("4/4: Generate Answer", generate_answer, query, context, model_name=model_name)
 
     print(f'Query: {query}')

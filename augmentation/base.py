@@ -37,5 +37,4 @@ def augment_context(query: str, retrieved_docs: list[Document], embedder=Sentenc
     Applies reranking and context compression to prepare final context string.
     """
     reranked = rerank_documents(query, retrieved_docs, embedder)
-    compressed = compress_documents(reranked)
-    return compressed
+    return reranked

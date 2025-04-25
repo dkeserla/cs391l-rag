@@ -17,7 +17,6 @@ def build_prompt(query: str, context: str) -> str:
     system_instruction = (
         "You are a helpful teaching assistant for a graduate-level machine learning course. "
         "Use only the information provided in the context to answer the student's question. "
-        "If the context is insufficient, say you don't know."
     )
 
     return f"""{system_instruction}\n\nContext:\n{context}\n\nQuestion:\n{query}""".strip()

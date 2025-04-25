@@ -3,11 +3,11 @@ from langchain_text_splitters import (
     CharacterTextSplitter
 )
 
-def chunk_document(docs, strategy="recursive"):
+def chunk_document(docs, strategy="recursive", chunk_size=2000, chunk_overlap=400):
     if strategy == "recursive":
-        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     elif strategy == "sliding":
-        splitter = CharacterTextSplitter(separator="\n", chunk_size=500, chunk_overlap=200)
+        splitter = CharacterTextSplitter(separator="\n", chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     else:
         raise ValueError("Unknown chunking strategy")
     return splitter.split_documents(docs)

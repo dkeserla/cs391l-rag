@@ -19,7 +19,8 @@ def build_retriever(
     rebuild=False,
     file_content_types = None,
     webpage_urls=["https://utcs-ml-course.github.io/", "https://utcs-ml-course.github.io/info/schedule/" "https://utcs-ml-course.github.io/info/class_policy/"],
-    webpage_content_types=["syllabus", "schedule", "class policies"],
+    #webpage_content_types=["syllabus", "schedule", "class policies"],
+    webpage_content_types=[{"type": "syllabus"}, {"type": "schedule"}, {"type": "class policies"}]
 ):
     embedder = get_embedding_model(model_name)
 
@@ -29,7 +30,7 @@ def build_retriever(
             shutil.rmtree(persist_dir)
         else:
             print("[build_retriever] Loading existing Chroma index...")
-            return Chroma(persist_directory=persist_dir, embedding_function=embedder).as_retriever()
+            return Chroma(persist_directory=persist_dir, embedding_function=embedder)
 
     print("[build_retriever] No index found or --rebuild flag used — building fresh ChromaDB...")
 
@@ -79,4 +80,4 @@ def build_retriever(
         persist_directory=persist_dir
     )
 
-    return vectorstore.as_retriever()
+    return vectorstore
