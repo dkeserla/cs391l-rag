@@ -80,7 +80,7 @@ def main():
     structured_query = retriever.query_constructor.invoke(query)
 
     print(structured_query)
-
+    # retriever = vectorstore.as_retriever()
 
     # retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
