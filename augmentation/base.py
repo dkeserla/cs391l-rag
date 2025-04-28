@@ -1,17 +1,40 @@
 from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer, util
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-def compress_documents(documents: list[Document], max_chars: int = 3000) -> str:
+def compress_documents(query: str,
+                       documents: list[Document],
+                       embedder,
+                       max_chars: int = 3000,
+                       chunk_size: int = 512,
+                       chunk_overlap: int = 100) -> str:
     """
     Naively truncates concatenated context to a max character length.
     (Can be replaced with summarization or chunk scoring later.)
     """
-    combined = ""
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+
+    chunks = []
     for doc in documents:
-        if len(combined) + len(doc.page_content) > max_chars:
+        chunks.extend(splitter.split_text(doc.page_content))
+
+    q_emb = torch.tensor(embedder.embed_query(query)).unsqueeze(0)
+    c_emb = torch.tensor(embedder.embed_documents(chunks))
+    sims = util.pytorch_cos_sim(q_emb, c_emb)[0]
+
+    ranked = sorted(zip(chunks, sims.tolist()), key=lambda x : x[1], reverse=True)
+
+    context, used = [], 0
+    for text, _ in ranked:
+        if used + len(text) + 1 > max_chars:
             break
-        combined += doc.page_content + "\n"
-    return combined.strip()
+        context.append(text)
+        used += len(text) + 1
+
+    return "\n".join(context).strip()
 
 
 from langchain_core.documents import Document
@@ -34,7 +57,10 @@ def rerank_documents(query: str, documents: list[Document], embedder, top_k=5) -
 
 def augment_context(query: str, retrieved_docs: list[Document], embedder=SentenceTransformer("all-MiniLM-L6-v2")) -> str:
     """
-    Applies reranking and context compression to prepare final context string.
+    Applies reranking and context compression to prepare final context string. TODO
     """
     reranked = rerank_documents(query, retrieved_docs, embedder)
-    return reranked
+
+    context = compress_documents(query, reranked, embedder)
+
+    return context
