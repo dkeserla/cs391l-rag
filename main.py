@@ -57,14 +57,14 @@ def main():
     parser.add_argument("--model", type=str, default="gemini-2", help="LLM to use: gpt-4o, gemini-2, claude-3.7")
     parser.add_argument("--embed", type=str, default="openai/text-embedding-3-small", help="Embedding model")
     parser.add_argument("--rebuild", action="store_true", help="Force rebuild of the vectorstore from documents")
-    parser.add_argument("--self_query", action="store_true", help="Use self-query retriever")
+    parser.add_argument("--no_self_query", action="store_true", help="Omit use self-query retriever")
 
     args = parser.parse_args()
 
     query = args.query or "What percentage of the grade is homework"
     model_name = args.model 
     embed_model_name = args.embed 
-    self_query = args.self_query
+    self_query = not args.no_self_query
 
     
 
