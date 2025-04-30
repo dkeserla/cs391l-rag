@@ -37,7 +37,7 @@ def get_gemini_response(query: str, context: str) -> str:
     Uses Gemini 2 to generate a response based on query and context.
     """
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     prompt = build_prompt(query, context)
     response = model.generate_content(prompt)
     return response.text.strip()

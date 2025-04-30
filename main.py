@@ -54,40 +54,40 @@ def main():
    
     parser = argparse.ArgumentParser(description="Run a RAG query on lecture transcripts.")
     parser.add_argument("--query", type=str, help="The question to ask.")
-    parser.add_argument("--model", type=str, default="gpt-4o", help="LLM to use: gpt-4o, gemini, claude-3.7")
-    parser.add_argument("--embed", type=str, default="sentence-transformers/all-MiniLM-L6-v2", help="Embedding model")
+    parser.add_argument("--model", type=str, default="gemini-2", help="LLM to use: gpt-4o, gemini-2, claude-3.7")
+    parser.add_argument("--embed", type=str, default="openai/text-embedding-3-small", help="Embedding model")
     parser.add_argument("--rebuild", action="store_true", help="Force rebuild of the vectorstore from documents")
+    parser.add_argument("--self_query", action="store_true", help="Use self-query retriever")
 
     args = parser.parse_args()
 
     query = args.query or "What percentage of the grade is homework"
-    model_name = args.model or "gpt-4o"  # "gpt-4o", "gemini", or "claude-3.7"
-    embed_model_name = args.embed or "sentence-transformers/all-MiniLM-L6-v2"
+    model_name = args.model 
+    embed_model_name = args.embed 
+    self_query = args.self_query
 
     
 
     # 1. Build retriever
     vectorstore = timed_section("1/4: Build Retriever", build_retriever, "data/", model_name=embed_model_name, file_content_types={"hw1.pdf": {"type": "homework", "homework_number": 1} , "hw2.pdf": {"type": "homework", "homework_number": 2}, "hw3.pdf": {"type": "homework", "homework_number": 3}, "hw4.pdf": {"type": "homework", "homework_number": 4}, "merged_transcript.txt": {"type": "lecture transcripts"} }, rebuild=args.rebuild)
-    llm = ChatOpenAI(temperature=0)
-    retriever = SelfQueryRetriever.from_llm(
-        llm,
-        vectorstore,
-        document_content_description,
-        metadata_field_info,
-        search_kwargs={"k":5},
-    )
+    if self_query:
+        llm = ChatOpenAI(temperature=0)
+        retriever = SelfQueryRetriever.from_llm(
+            llm,
+            vectorstore,
+            document_content_description,
+            metadata_field_info,
+            search_kwargs={"k":5},
+        )
     # Suppose your retriever is called "retriever"
-    structured_query = retriever.query_constructor.invoke(query)
-
-    print(structured_query)
-    # retriever = vectorstore.as_retriever()
+    else:
+        retriever = vectorstore.as_retriever()
 
     # retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
     # 2. Retrieve documents
     retrieved_docs = timed_section("2/4: Retrieve Documents", retriever.invoke, query)
-    print(f"Retrieved {len(retrieved_docs)} documents.")
-    print(retrieved_docs)
+  
 
     # 3. Rerank + compress
     embed_model = timed_section("3/4a: Load Embedder", get_embedding_model, embed_model_name)
